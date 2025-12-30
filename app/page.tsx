@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trip } from "@/types/trip";
+import { Trip, TRAVEL_STYLE_LABELS } from "@/types/trip";
 import CreateTripForm from "@/components/CreateTripForm";
 import TripDashboard from "@/components/TripDashboard";
+import { getCurrencyMeta } from "@/types/expense";
 
 type TabType = "home" | "add" | "reports" | "trip";
 
@@ -216,11 +217,35 @@ function TripDetailsTab({ trip, onResetTrip }: TabContentProps) {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center">
-                    <span className="text-xl">👥</span>
+                    <span className="text-xl">💰</span>
                   </div>
-                  <span className="text-gray-600 font-medium">מספר נוסעים</span>
+                  <span className="text-gray-600 font-medium">מטבע בסיס</span>
                 </div>
-                <span className="text-lg font-bold text-gray-900">{trip.travelersCount}</span>
+                <span className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <span className="text-2xl">{getCurrencyMeta(trip.baseCurrency).flag}</span>
+                  <span>{trip.baseCurrency}</span>
+                  <span className="text-gray-600">{getCurrencyMeta(trip.baseCurrency).symbol}</span>
+                </span>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl shadow-xl p-6 border border-sky-100">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                    <span className="text-xl">👨‍👩‍👧‍👦</span>
+                  </div>
+                  <span className="text-gray-600 font-medium">מספר מטיילים</span>
+                </div>
+                <div className="text-left">
+                  <div className="text-lg font-bold text-gray-900">
+                    {trip.adults} {trip.adults === 1 ? "מבוגר" : "מבוגרים"}
+                  </div>
+                  {trip.children > 0 && (
+                    <div className="text-sm text-gray-600">
+                      + {trip.children} {trip.children === 1 ? "ילד" : "ילדים"}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <div className="bg-white rounded-2xl shadow-xl p-6 border border-sky-100">
@@ -231,15 +256,16 @@ function TripDetailsTab({ trip, onResetTrip }: TabContentProps) {
                   </div>
                   <span className="text-gray-600 font-medium">סגנון טיול</span>
                 </div>
-                <span className="text-lg font-bold text-gray-900">
-                  {{
-                    honeymoon: "ירח דבש",
-                    family: "טיול משפחתי",
-                    "post-army": "טיול אחרי צבא",
-                    urban: "חופשה אורבנית",
-                    other: "אחר",
-                  }[trip.travelStyle]}
-                </span>
+                <div className="text-left">
+                  <span className="text-lg font-bold text-gray-900">
+                    {TRAVEL_STYLE_LABELS[trip.travelStyle]}
+                  </span>
+                  {trip.travelStyle === "other" && trip.tripStyleOther && (
+                    <div className="text-sm text-gray-600 mt-1">
+                      {trip.tripStyleOther}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <div className="pt-4">

@@ -1,3 +1,5 @@
+import { Currency } from "./expense";
+
 export type TravelStyle = 
   | "honeymoon" 
   | "family" 
@@ -9,8 +11,11 @@ export interface Trip {
   id: string;
   name: string;
   startDate: string;
-  travelersCount: number;
+  baseCurrency: Currency;
+  adults: number;
+  children: number;
   travelStyle: TravelStyle;
+  tripStyleOther?: string; // Only filled when travelStyle is "other"
   createdAt: string;
 }
 
@@ -21,4 +26,3 @@ export const TRAVEL_STYLE_LABELS: Record<TravelStyle, string> = {
   urban: "חופשה אורבנית",
   other: "אחר",
 };
-
