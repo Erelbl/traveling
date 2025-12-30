@@ -2,15 +2,8 @@
 
 import { useState, FormEvent, useMemo } from "react";
 import { Trip, TravelStyle, TRAVEL_STYLE_LABELS } from "@/types/trip";
-import { Currency, getCurrencyMeta } from "@/types/expense";
-
-// All supported currencies
-const ALL_CURRENCIES: Currency[] = [
-  "ILS", "USD", "EUR", "GBP", "JPY", "CNY", "THB", "AUD", "CAD", "CHF",
-  "INR", "AED", "TRY", "MXN", "BRL", "ZAR", "SGD", "NZD", "HKD", "SEK",
-  "NOK", "DKK", "PLN", "CZK", "HUF", "RON", "RUB", "KRW", "IDR", "MYR",
-  "PHP", "VND", "EGP", "SAR", "QAR", "KWD", "JOD", "ARS", "CLP", "COP", "PEN"
-];
+import { Currency, getCurrencyMeta, SUPPORTED_CURRENCIES } from "@/types/expense";
+import { validateTripData, getFirstError } from "@/lib/validation";
 
 interface CreateTripFormProps {
   onTripCreated: (trip: Trip) => void;
@@ -29,14 +22,14 @@ export default function CreateTripForm({ onTripCreated }: CreateTripFormProps) {
 
   // Filter currencies based on search
   const filteredCurrencies = useMemo(() => {
-    if (!currencySearch) return ALL_CURRENCIES;
+    if (!currencySearch) return SUPPORTED_CURRENCIES;
     const search = currencySearch.toLowerCase();
-    return ALL_CURRENCIES.filter((curr) => {
+    return SUPPORTED_CURRENCIES.filter((curr) => {
       const meta = getCurrencyMeta(curr);
       return (
         curr.toLowerCase().includes(search) ||
-        meta?.label?.includes(search) ||
-        meta?.symbol?.includes(search)
+        meta.label.includes(search) ||
+        meta.symbol.includes(search)
       );
     });
   }, [currencySearch]);
@@ -44,31 +37,55 @@ export default function CreateTripForm({ onTripCreated }: CreateTripFormProps) {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
 
-    // Validation
-    if (!name.trim()) {
-      alert("אנא הזן שם טיול");
-      return;
-    }
-
-    if (adults < 1) {
-      alert("חייב להיות לפחות מבוגר אחד");
-      return;
-    }
-
-    if (travelStyle === "other" && !tripStyleOther.trim()) {
-      alert("אנא הזן תיאור לסגנון הטיול");
-      return;
-    }
-
-    const newTrip: Trip = {
-      id: `trip_${Date.now()}`,
-      name,
+    // Create trip data object
+    const tripData: Omit<Trip, "id" | "createdAt"> = {
+      name: name.trim(),
       startDate,
       baseCurrency,
       adults,
       children,
       travelStyle,
-      tripStyleOther: travelStyle === "other" ? tripStyleOther : undefined,
+      tripStyleOther: travelStyle === "other" ? tripStyleOther.trim() : undefined,
+    };
+
+    // Validate trip data using centralized validation
+    const validationErrors = validateTripData(tripData);
+    if (validationErrors.length > 0) {
+      // Get Hebrew error messages
+      const errorField = validationErrors[0].field;
+      let errorMessage = "";
+      
+      switch (errorField) {
+        case "name":
+          errorMessage = "אנא הזן שם טיול";
+          break;
+        case "baseCurrency":
+          errorMessage = "אנא בחר מטבע תקין מהרשימה";
+          break;
+        case "adults":
+          errorMessage = "חייב להיות לפחות מבוגר אחד";
+          break;
+        case "children":
+          errorMessage = "מספר הילדים חייב להיות 0 או יותר";
+          break;
+        case "travelStyle":
+          errorMessage = "אנא בחר סגנון טיול";
+          break;
+        case "tripStyleOther":
+          errorMessage = "אנא הזן תיאור לסגנון הטיול";
+          break;
+        default:
+          errorMessage = validationErrors[0].message;
+      }
+      
+      alert(errorMessage);
+      return;
+    }
+
+    // Create complete trip object with generated fields
+    const newTrip: Trip = {
+      id: `trip_${Date.now()}`,
+      ...tripData,
       createdAt: new Date().toISOString(),
     };
 
@@ -140,11 +157,11 @@ export default function CreateTripForm({ onTripCreated }: CreateTripFormProps) {
                 className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors text-lg flex items-center justify-between"
               >
                 <span className="flex items-center gap-2">
-                  <span className="text-2xl">{selectedCurrencyMeta?.flag || "🏳️"}</span>
+                  <span className="text-2xl">{selectedCurrencyMeta.flag}</span>
                   <span className="font-bold">{baseCurrency}</span>
-                  <span className="text-gray-600">{selectedCurrencyMeta?.symbol || "¤"}</span>
+                  <span className="text-gray-600">{selectedCurrencyMeta.symbol}</span>
                   <span className="text-gray-500">·</span>
-                  <span className="text-gray-600">{selectedCurrencyMeta?.label || baseCurrency}</span>
+                  <span className="text-gray-600">{selectedCurrencyMeta.label}</span>
                 </span>
                 <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
@@ -179,11 +196,11 @@ export default function CreateTripForm({ onTripCreated }: CreateTripFormProps) {
                             baseCurrency === curr ? "bg-blue-100" : ""
                           }`}
                         >
-                          <span className="text-2xl">{meta?.flag || "🏳️"}</span>
+                          <span className="text-2xl">{meta.flag}</span>
                           <span className="font-bold">{curr}</span>
-                          <span className="text-gray-600">{meta?.symbol || "¤"}</span>
+                          <span className="text-gray-600">{meta.symbol}</span>
                           <span className="text-gray-500">·</span>
-                          <span className="text-gray-600 flex-1">{meta?.label || curr}</span>
+                          <span className="text-gray-600 flex-1">{meta.label}</span>
                         </button>
                       );
                     })}

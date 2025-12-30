@@ -5,6 +5,7 @@ import { Trip, TRAVEL_STYLE_LABELS } from "@/types/trip";
 import CreateTripForm from "@/components/CreateTripForm";
 import TripDashboard from "@/components/TripDashboard";
 import { getCurrencyMeta } from "@/types/expense";
+import { sanitizeTripData } from "@/lib/validation";
 
 type TabType = "home" | "add" | "reports" | "trip";
 
@@ -222,9 +223,9 @@ function TripDetailsTab({ trip, onResetTrip }: TabContentProps) {
                   <span className="text-gray-600 font-medium">מטבע בסיס</span>
                 </div>
                 <span className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <span className="text-2xl">{getCurrencyMeta(trip.baseCurrency)?.flag || "🏳️"}</span>
+                  <span className="text-2xl">{getCurrencyMeta(trip.baseCurrency).flag}</span>
                   <span>{trip.baseCurrency}</span>
-                  <span className="text-gray-600">{getCurrencyMeta(trip.baseCurrency)?.symbol || "¤"}</span>
+                  <span className="text-gray-600">{getCurrencyMeta(trip.baseCurrency).symbol}</span>
                 </span>
               </div>
             </div>
@@ -293,10 +294,23 @@ export default function Home() {
     const savedTrip = localStorage.getItem("current_trip");
     if (savedTrip) {
       try {
-        const trip = JSON.parse(savedTrip);
-        setCurrentTrip(trip);
+        const rawTrip = JSON.parse(savedTrip);
+        // Sanitize trip data to ensure baseCurrency and other fields are valid
+        const sanitizedTrip = sanitizeTripData(rawTrip);
+        if (sanitizedTrip) {
+          setCurrentTrip(sanitizedTrip);
+          // If data was sanitized (fixed), save it back to localStorage
+          if (sanitizedTrip.baseCurrency !== rawTrip.baseCurrency) {
+            console.log("Trip data was sanitized, saving updated version");
+            localStorage.setItem("current_trip", JSON.stringify(sanitizedTrip));
+          }
+        } else {
+          console.error("Invalid trip data in localStorage");
+          localStorage.removeItem("current_trip");
+        }
       } catch (error) {
         console.error("Error loading trip:", error);
+        localStorage.removeItem("current_trip");
       }
     }
     setIsLoading(false);

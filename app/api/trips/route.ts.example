@@ -1,0 +1,99 @@
+/**
+ * Example API route for creating trips with server-side validation
+ * 
+ * To use this:
+ * 1. Rename this file from route.ts.example to route.ts
+ * 2. Connect to a database (Prisma is already configured)
+ * 3. Update CreateTripForm to POST to this endpoint instead of using localStorage
+ */
+
+import { NextRequest, NextResponse } from "next/server";
+import { validateTripData, sanitizeTripData } from "@/lib/validation";
+
+// POST /api/trips - Create a new trip
+export async function POST(request: NextRequest) {
+  try {
+    // Parse request body
+    const body = await request.json();
+
+    // Sanitize input data first
+    const sanitizedData = sanitizeTripData(body);
+    if (!sanitizedData) {
+      return NextResponse.json(
+        { error: "Invalid trip data structure" },
+        { status: 400 }
+      );
+    }
+
+    // Validate the sanitized data
+    const validationErrors = validateTripData(sanitizedData);
+    if (validationErrors.length > 0) {
+      return NextResponse.json(
+        {
+          error: "Validation failed",
+          details: validationErrors,
+        },
+        { status: 400 }
+      );
+    }
+
+    // IMPORTANT: baseCurrency validation ensures no invalid currencies are stored
+    // The validation function already checks:
+    // - baseCurrency is not null/undefined
+    // - baseCurrency is in SUPPORTED_CURRENCIES list
+    // - If invalid, sanitizeTripData already set it to USD
+
+    // TODO: Save to database using Prisma
+    // Example:
+    // const trip = await prisma.trip.create({
+    //   data: {
+    //     ...sanitizedData,
+    //     userId: session.user.id, // from auth
+    //   },
+    // });
+
+    // For now, return the sanitized data
+    return NextResponse.json(
+      {
+        success: true,
+        trip: sanitizedData,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error("Error creating trip:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+// GET /api/trips - Get all trips for the current user
+export async function GET(request: NextRequest) {
+  try {
+    // TODO: Get user from session/auth
+    // TODO: Fetch trips from database
+    // const trips = await prisma.trip.findMany({
+    //   where: { userId: session.user.id },
+    // });
+
+    // IMPORTANT: When fetching trips from database, sanitize them
+    // in case old data with invalid baseCurrency exists:
+    // const sanitizedTrips = trips.map(sanitizeTripData).filter(Boolean);
+
+    return NextResponse.json(
+      {
+        trips: [],
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error fetching trips:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+

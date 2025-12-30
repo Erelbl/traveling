@@ -66,7 +66,7 @@ export default function TripDashboard({ trip, onResetTrip }: TripDashboardProps)
             </div>
             <span className="text-cyan-300">•</span>
             <div className="flex items-center gap-1.5">
-              <span className="text-lg">{getCurrencyMeta(trip.baseCurrency)?.flag || "🏳️"}</span>
+              <span className="text-lg">{getCurrencyMeta(trip.baseCurrency).flag}</span>
               <span className="text-sm font-semibold">{trip.baseCurrency}</span>
             </div>
           </div>

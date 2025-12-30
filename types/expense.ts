@@ -144,7 +144,16 @@ export interface CurrencyMeta {
 }
 
 // Get currency metadata
-export const getCurrencyMeta = (currency: Currency | string): CurrencyMeta => {
+export const getCurrencyMeta = (currency: Currency | string | null | undefined): CurrencyMeta => {
+  // Handle null, undefined, or empty string
+  if (!currency) {
+    return {
+      symbol: "¤",
+      flag: "🏳️",
+      label: "לא ידוע",
+    };
+  }
+
   const meta: Record<Currency, CurrencyMeta> = {
     ILS: { symbol: "₪", flag: "🇮🇱", label: "שקל" },
     USD: { symbol: "$", flag: "🇺🇸", label: "דולר" },
@@ -189,11 +198,17 @@ export const getCurrencyMeta = (currency: Currency | string): CurrencyMeta => {
     PEN: { symbol: "S/", flag: "🇵🇪", label: "סול פרואני" },
   };
   
-  // Return the currency meta if found, otherwise return a fallback
-  return meta[currency as Currency] || {
-    symbol: "¤",
+  // Return the currency meta if found, otherwise return a fallback with the currency code
+  const result = meta[currency as Currency];
+  if (result) {
+    return result;
+  }
+  
+  // Unknown currency: return fallback with currency code as label
+  return {
+    symbol: currency,
     flag: "🏳️",
-    label: currency || "לא ידוע",
+    label: currency,
   };
 };
 
@@ -203,4 +218,25 @@ export const formatAmount = (amount: number): string => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(amount);
+};
+
+// All supported currencies as a constant array for validation
+export const SUPPORTED_CURRENCIES: Currency[] = [
+  "ILS", "USD", "EUR", "GBP", "JPY", "CNY", "THB", "AUD", "CAD", "CHF",
+  "INR", "AED", "TRY", "MXN", "BRL", "ZAR", "SGD", "NZD", "HKD", "SEK",
+  "NOK", "DKK", "PLN", "CZK", "HUF", "RON", "RUB", "KRW", "IDR", "MYR",
+  "PHP", "VND", "EGP", "SAR", "QAR", "KWD", "JOD", "ARS", "CLP", "COP", "PEN"
+];
+
+// Default currency for the application
+export const DEFAULT_CURRENCY: Currency = "USD";
+
+// Validate if a string is a supported currency
+export const isValidCurrency = (value: unknown): value is Currency => {
+  return typeof value === "string" && SUPPORTED_CURRENCIES.includes(value as Currency);
+};
+
+// Get a valid currency or return the default
+export const getValidCurrencyOrDefault = (value: unknown): Currency => {
+  return isValidCurrency(value) ? value : DEFAULT_CURRENCY;
 };
