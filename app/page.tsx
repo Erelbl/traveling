@@ -222,9 +222,9 @@ function TripDetailsTab({ trip, onResetTrip }: TabContentProps) {
                   <span className="text-gray-600 font-medium">מטבע בסיס</span>
                 </div>
                 <span className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <span className="text-2xl">{getCurrencyMeta(trip.baseCurrency).flag}</span>
+                  <span className="text-2xl">{getCurrencyMeta(trip.baseCurrency)?.flag || "🏳️"}</span>
                   <span>{trip.baseCurrency}</span>
-                  <span className="text-gray-600">{getCurrencyMeta(trip.baseCurrency).symbol}</span>
+                  <span className="text-gray-600">{getCurrencyMeta(trip.baseCurrency)?.symbol || "¤"}</span>
                 </span>
               </div>
             </div>

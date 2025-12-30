@@ -144,7 +144,7 @@ export interface CurrencyMeta {
 }
 
 // Get currency metadata
-export const getCurrencyMeta = (currency: Currency): CurrencyMeta => {
+export const getCurrencyMeta = (currency: Currency | string): CurrencyMeta => {
   const meta: Record<Currency, CurrencyMeta> = {
     ILS: { symbol: "₪", flag: "🇮🇱", label: "שקל" },
     USD: { symbol: "$", flag: "🇺🇸", label: "דולר" },
@@ -188,7 +188,13 @@ export const getCurrencyMeta = (currency: Currency): CurrencyMeta => {
     COP: { symbol: "$", flag: "🇨🇴", label: "פסו קולומביאני" },
     PEN: { symbol: "S/", flag: "🇵🇪", label: "סול פרואני" },
   };
-  return meta[currency];
+  
+  // Return the currency meta if found, otherwise return a fallback
+  return meta[currency as Currency] || {
+    symbol: "¤",
+    flag: "🏳️",
+    label: currency || "לא ידוע",
+  };
 };
 
 // Format amount with locale-specific formatting

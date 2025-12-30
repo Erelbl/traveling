@@ -35,8 +35,8 @@ export default function CreateTripForm({ onTripCreated }: CreateTripFormProps) {
       const meta = getCurrencyMeta(curr);
       return (
         curr.toLowerCase().includes(search) ||
-        meta.label.includes(search) ||
-        meta.symbol.includes(search)
+        meta?.label?.includes(search) ||
+        meta?.symbol?.includes(search)
       );
     });
   }, [currencySearch]);
@@ -140,11 +140,11 @@ export default function CreateTripForm({ onTripCreated }: CreateTripFormProps) {
                 className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors text-lg flex items-center justify-between"
               >
                 <span className="flex items-center gap-2">
-                  <span className="text-2xl">{selectedCurrencyMeta.flag}</span>
+                  <span className="text-2xl">{selectedCurrencyMeta?.flag || "🏳️"}</span>
                   <span className="font-bold">{baseCurrency}</span>
-                  <span className="text-gray-600">{selectedCurrencyMeta.symbol}</span>
+                  <span className="text-gray-600">{selectedCurrencyMeta?.symbol || "¤"}</span>
                   <span className="text-gray-500">·</span>
-                  <span className="text-gray-600">{selectedCurrencyMeta.label}</span>
+                  <span className="text-gray-600">{selectedCurrencyMeta?.label || baseCurrency}</span>
                 </span>
                 <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
@@ -179,11 +179,11 @@ export default function CreateTripForm({ onTripCreated }: CreateTripFormProps) {
                             baseCurrency === curr ? "bg-blue-100" : ""
                           }`}
                         >
-                          <span className="text-2xl">{meta.flag}</span>
+                          <span className="text-2xl">{meta?.flag || "🏳️"}</span>
                           <span className="font-bold">{curr}</span>
-                          <span className="text-gray-600">{meta.symbol}</span>
+                          <span className="text-gray-600">{meta?.symbol || "¤"}</span>
                           <span className="text-gray-500">·</span>
-                          <span className="text-gray-600 flex-1">{meta.label}</span>
+                          <span className="text-gray-600 flex-1">{meta?.label || curr}</span>
                         </button>
                       );
                     })}

@@ -1,5 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// prisma/schema.prisma
 
 datasource db {
   provider = "postgresql"
@@ -22,45 +21,52 @@ enum ExpenseCategory {
 }
 
 enum SplitMethod {
-  EQUAL      // Split equally among participants
-  EXACT      // Exact amounts for each participant
-  PERCENT    // Split by percentage
-  WEIGHTS    // Split by custom weights
+  EQUAL
+  EXACT
+  PERCENT
+  WEIGHTS
 }
 
-// User model
+// ✅ Single User model (App + Auth.js)
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  trips     Trip[]
+  id            String    @id @default(cuid())
+  email         String?   @unique
+  name          String?
+  emailVerified DateTime?
+  image         String?
+
+  // App relations
+  trips         Trip[]    @relation("TripsOwned")
+
+  // Auth.js relations
+  accounts      Account[]
+  sessions      Session[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 // Trip model
 model Trip {
   id               String        @id @default(cuid())
-  userId           String
+  ownerId          String
   name             String
   description      String?       @db.Text
-  baseCurrency     String        // ISO 4217 currency code (e.g., "ILS", "USD")
+  baseCurrency     String
   startDate        DateTime
   endDate          DateTime?
-  travelStyle      String?       // e.g., "honeymoon", "family", "post-army", "urban", "other"
-  travelStyleOther String?       // Custom style when travelStyle is "other"
+  travelStyle      String?
+  travelStyleOther String?
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
-  
+
   // Relations
-  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  owner            User          @relation("TripsOwned", fields: [ownerId], references: [id], onDelete: Cascade)
   participants     Participant[]
   expenses         Expense[]
   transfers        Transfer[]
-  
-  @@index([userId])
+
+  @@index([ownerId])
   @@index([startDate])
 }
 
@@ -72,14 +78,14 @@ model Participant {
   email     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   // Relations
   trip              Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
   expensesPaid      Expense[]      @relation("PaidByParticipant")
   expenseShares     ExpenseShare[]
   transfersFrom     Transfer[]     @relation("TransferFrom")
   transfersTo       Transfer[]     @relation("TransferTo")
-  
+
   @@index([tripId])
   @@index([email])
 }
@@ -88,22 +94,22 @@ model Participant {
 model Expense {
   id          String          @id @default(cuid())
   tripId      String
-  paidById    String          // Participant who paid
+  paidById    String
   description String
-  amount      Decimal         @db.Decimal(12, 2) // Total amount
-  currency    String          // ISO 4217 currency code
+  amount      Decimal         @db.Decimal(12, 2)
+  currency    String
   category    ExpenseCategory
   date        DateTime        @default(now())
   notes       String?         @db.Text
   splitMethod SplitMethod     @default(EQUAL)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
-  
+
   // Relations
   trip        Trip            @relation(fields: [tripId], references: [id], onDelete: Cascade)
   paidBy      Participant     @relation("PaidByParticipant", fields: [paidById], references: [id], onDelete: Restrict)
   shares      ExpenseShare[]
-  
+
   @@index([tripId])
   @@index([paidById])
   @@index([date])
@@ -115,15 +121,15 @@ model ExpenseShare {
   id            String   @id @default(cuid())
   expenseId     String
   participantId String
-  amount        Decimal  @db.Decimal(12, 2) // Amount this participant owes/paid
-  percent       Decimal? @db.Decimal(5, 2)  // Percentage (0-100) when using PERCENT split
-  weight        Decimal? @db.Decimal(10, 2) // Weight when using WEIGHTS split
+  amount        Decimal  @db.Decimal(12, 2)
+  percent       Decimal? @db.Decimal(5, 2)
+  weight        Decimal? @db.Decimal(10, 2)
   createdAt     DateTime @default(now())
-  
+
   // Relations
   expense       Expense     @relation(fields: [expenseId], references: [id], onDelete: Cascade)
   participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
-  
+
   @@unique([expenseId, participantId])
   @@index([expenseId])
   @@index([participantId])
@@ -136,19 +142,59 @@ model Transfer {
   fromParticipantId String
   toParticipantId   String
   amount            Decimal     @db.Decimal(12, 2)
-  currency          String      // ISO 4217 currency code
+  currency          String
   description       String?
   date              DateTime    @default(now())
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
-  
+
   // Relations
   trip              Trip        @relation(fields: [tripId], references: [id], onDelete: Cascade)
   fromParticipant   Participant @relation("TransferFrom", fields: [fromParticipantId], references: [id], onDelete: Restrict)
   toParticipant     Participant @relation("TransferTo", fields: [toParticipantId], references: [id], onDelete: Restrict)
-  
+
   @@index([tripId])
   @@index([fromParticipantId])
   @@index([toParticipantId])
   @@index([date])
+}
+
+// Auth.js / NextAuth tables
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
