@@ -1,10 +1,12 @@
 import { PrismaClient } from '@prisma/client'
+import { PrismaNeon } from '@prisma/adapter-neon'
+import { Pool } from '@neondatabase/serverless'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-// Prisma v7 with prisma.config.ts - pass empty object to constructor
+// Prisma v7 requires adapter for Neon database
 const createPrismaClient = () => {
   // Check DATABASE_URL exists
   if (!process.env.DATABASE_URL) {
@@ -13,8 +15,14 @@ const createPrismaClient = () => {
     );
   }
 
-  // In Prisma v7 with prisma.config.ts, pass empty options object
-  return new PrismaClient({});
+  // Create Neon connection pool
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+  
+  // Create Neon adapter
+  const adapter = new PrismaNeon(pool)
+  
+  // Return PrismaClient with adapter
+  return new PrismaClient({ adapter })
 };
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient()
