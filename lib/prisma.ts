@@ -1,65 +1,81 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaNeon } from '@prisma/adapter-neon'
-import { Pool } from '@neondatabase/serverless'
+import { Pool, neonConfig } from '@neondatabase/serverless'
+
+// Check DATABASE_URL immediately on module load
+const DATABASE_URL = process.env.DATABASE_URL;
+
+if (!DATABASE_URL) {
+  throw new Error(
+    '❌ DATABASE_URL is not defined!\n' +
+    'Please create .env.local in project root with:\n' +
+    'DATABASE_URL="postgresql://..."\n\n' +
+    'See SETUP_ENV_INSTRUCTIONS.md for details.'
+  );
+}
+
+if (!DATABASE_URL.startsWith('postgres://') && !DATABASE_URL.startsWith('postgresql://')) {
+  throw new Error(
+    `❌ Invalid DATABASE_URL format!\n` +
+    `Expected: postgresql://...\n` +
+    `Got: ${DATABASE_URL.substring(0, 30)}...\n\n` +
+    `Check your .env.local file.`
+  );
+}
+
+console.log('[Prisma] ✓ DATABASE_URL loaded:', DATABASE_URL.substring(0, 25) + '...');
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
   pool: Pool | undefined
+  connectionString: string | undefined
 }
+
+// Create a stable connection pool
+const createOrGetPool = () => {
+  // If we have a cached pool AND the connection string hasn't changed, reuse it
+  if (globalForPrisma.pool && globalForPrisma.connectionString === DATABASE_URL) {
+    console.log('[Prisma] Reusing existing Neon Pool');
+    return globalForPrisma.pool;
+  }
+
+  console.log('[Prisma] Creating new Neon Pool');
+  
+  // Configure Neon for Node.js environment
+  neonConfig.fetchConnectionCache = true;
+  
+  // Create new pool with explicit connection string
+  const pool = new Pool({ 
+    connectionString: DATABASE_URL,
+  });
+  
+  // Cache it for reuse in development
+  if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.pool = pool;
+    globalForPrisma.connectionString = DATABASE_URL;
+  }
+  
+  return pool;
+};
 
 // Prisma v7 requires adapter for Neon database
 const createPrismaClient = () => {
-  const databaseUrl = process.env.DATABASE_URL;
+  console.log('[Prisma] Creating PrismaClient...');
   
-  console.log('[Prisma] Creating client with DATABASE_URL:', databaseUrl ? '✓ Present' : '✗ Missing');
-  console.log('[Prisma] DATABASE_URL starts with:', databaseUrl?.substring(0, 20) + '...');
+  const pool = createOrGetPool();
+  const adapter = new PrismaNeon(pool);
   
-  // Check DATABASE_URL exists
-  if (!databaseUrl) {
-    throw new Error(
-      'DATABASE_URL is not defined. Please add it to your .env or .env.local file.'
-    );
-  }
-
-  // Validate DATABASE_URL format
-  if (!databaseUrl.startsWith('postgres://') && !databaseUrl.startsWith('postgresql://')) {
-    throw new Error(
-      `Invalid DATABASE_URL format. Expected postgresql://... but got: ${databaseUrl.substring(0, 20)}...`
-    );
-  }
-
-  console.log('[Prisma] Creating Neon Pool with connection string');
+  console.log('[Prisma] ✓ PrismaClient created successfully');
   
-  // Reuse pool in development to avoid multiple connections
-  let pool = globalForPrisma.pool;
-  
-  if (!pool) {
-    pool = new Pool({ 
-      connectionString: databaseUrl,
-    });
-    
-    if (process.env.NODE_ENV !== 'production') {
-      globalForPrisma.pool = pool;
-    }
-    
-    console.log('[Prisma] New Neon Pool created');
-  } else {
-    console.log('[Prisma] Reusing existing Neon Pool');
-  }
-  
-  // Create Neon adapter
-  const adapter = new PrismaNeon(pool)
-  
-  console.log('[Prisma] PrismaClient created successfully');
-  
-  // Return PrismaClient with adapter
   return new PrismaClient({ 
     adapter,
-    log: ['error', 'warn'],
-  })
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+  });
 };
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient()
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
+}
 
