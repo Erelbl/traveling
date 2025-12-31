@@ -81,3 +81,5 @@ export { auth, signIn, signOut };
 export const GET = handlers.GET;
 export const POST = handlers.POST;
 
+console.log("AUTH_RESEND_KEY set?", !!process.env.AUTH_RESEND_KEY);
+console.log("AUTH_EMAIL_FROM:", process.env.AUTH_EMAIL_FROM);
