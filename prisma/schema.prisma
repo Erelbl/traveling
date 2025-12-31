@@ -1,14 +1,118 @@
-// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
 
 datasource db {
   provider = "postgresql"
 }
 
-generator client {
-  provider = "prisma-client-js"
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+  name      String?
+  updatedAt DateTime @updatedAt
+  Trip      Trip[]
 }
 
-// Enums
+model Trip {
+  id               String        @id @default(cuid())
+  userId           String
+  name             String
+  startDate        DateTime
+  baseCurrency     String
+  travelStyle      String?
+  travelStyleOther String?
+  createdAt        DateTime      @default(now())
+  description      String?
+  endDate          DateTime?
+  updatedAt        DateTime      @updatedAt
+  expenses         Expense[]
+  participants     Participant[]
+  transfers        Transfer[]
+  User             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([startDate])
+  @@index([userId])
+}
+
+model Participant {
+  id            String         @id @default(cuid())
+  tripId        String
+  name          String
+  email         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  expensesPaid  Expense[]      @relation("PaidByParticipant")
+  expenseShares ExpenseShare[]
+  trip          Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  transfersFrom Transfer[]     @relation("TransferFrom")
+  transfersTo   Transfer[]     @relation("TransferTo")
+
+  @@index([tripId])
+  @@index([email])
+}
+
+model Expense {
+  id          String          @id @default(cuid())
+  tripId      String
+  amount      Decimal         @db.Decimal(12, 2)
+  currency    String
+  category    ExpenseCategory
+  notes       String?
+  createdAt   DateTime        @default(now())
+  date        DateTime        @default(now())
+  description String
+  paidById    String
+  splitMethod SplitMethod     @default(EQUAL)
+  updatedAt   DateTime        @updatedAt
+  paidBy      Participant     @relation("PaidByParticipant", fields: [paidById], references: [id])
+  trip        Trip            @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  shares      ExpenseShare[]
+
+  @@index([tripId])
+  @@index([paidById])
+  @@index([date])
+  @@index([category])
+}
+
+model ExpenseShare {
+  id            String      @id @default(cuid())
+  expenseId     String
+  participantId String
+  amount        Decimal     @db.Decimal(12, 2)
+  percent       Decimal?    @db.Decimal(5, 2)
+  weight        Decimal?    @db.Decimal(10, 2)
+  createdAt     DateTime    @default(now())
+  expense       Expense     @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([expenseId, participantId])
+  @@index([expenseId])
+  @@index([participantId])
+}
+
+model Transfer {
+  id                String      @id @default(cuid())
+  tripId            String
+  fromParticipantId String
+  toParticipantId   String
+  amount            Decimal     @db.Decimal(12, 2)
+  currency          String
+  description       String?
+  date              DateTime    @default(now())
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  fromParticipant   Participant @relation("TransferFrom", fields: [fromParticipantId], references: [id])
+  toParticipant     Participant @relation("TransferTo", fields: [toParticipantId], references: [id])
+  trip              Trip        @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@index([fromParticipantId])
+  @@index([toParticipantId])
+  @@index([date])
+}
+
 enum ExpenseCategory {
   flights
   accommodation
@@ -25,176 +129,4 @@ enum SplitMethod {
   EXACT
   PERCENT
   WEIGHTS
-}
-
-// ✅ Single User model (App + Auth.js)
-model User {
-  id            String    @id @default(cuid())
-  email         String?   @unique
-  name          String?
-  emailVerified DateTime?
-  image         String?
-
-  // App relations
-  trips         Trip[]    @relation("TripsOwned")
-
-  // Auth.js relations
-  accounts      Account[]
-  sessions      Session[]
-
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-}
-
-// Trip model
-model Trip {
-  id               String        @id @default(cuid())
-  ownerId          String
-  name             String
-  description      String?       @db.Text
-  baseCurrency     String
-  startDate        DateTime
-  endDate          DateTime?
-  travelStyle      String?
-  travelStyleOther String?
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-
-  // Relations
-  owner            User          @relation("TripsOwned", fields: [ownerId], references: [id], onDelete: Cascade)
-  participants     Participant[]
-  expenses         Expense[]
-  transfers        Transfer[]
-
-  @@index([ownerId])
-  @@index([startDate])
-}
-
-// Participant in a trip
-model Participant {
-  id        String   @id @default(cuid())
-  tripId    String
-  name      String
-  email     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  trip              Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  expensesPaid      Expense[]      @relation("PaidByParticipant")
-  expenseShares     ExpenseShare[]
-  transfersFrom     Transfer[]     @relation("TransferFrom")
-  transfersTo       Transfer[]     @relation("TransferTo")
-
-  @@index([tripId])
-  @@index([email])
-}
-
-// Expense model
-model Expense {
-  id          String          @id @default(cuid())
-  tripId      String
-  paidById    String
-  description String
-  amount      Decimal         @db.Decimal(12, 2)
-  currency    String
-  category    ExpenseCategory
-  date        DateTime        @default(now())
-  notes       String?         @db.Text
-  splitMethod SplitMethod     @default(EQUAL)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-
-  // Relations
-  trip        Trip            @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  paidBy      Participant     @relation("PaidByParticipant", fields: [paidById], references: [id], onDelete: Restrict)
-  shares      ExpenseShare[]
-
-  @@index([tripId])
-  @@index([paidById])
-  @@index([date])
-  @@index([category])
-}
-
-// Expense share for each participant
-model ExpenseShare {
-  id            String   @id @default(cuid())
-  expenseId     String
-  participantId String
-  amount        Decimal  @db.Decimal(12, 2)
-  percent       Decimal? @db.Decimal(5, 2)
-  weight        Decimal? @db.Decimal(10, 2)
-  createdAt     DateTime @default(now())
-
-  // Relations
-  expense       Expense     @relation(fields: [expenseId], references: [id], onDelete: Cascade)
-  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
-
-  @@unique([expenseId, participantId])
-  @@index([expenseId])
-  @@index([participantId])
-}
-
-// Transfer/Settlement between participants
-model Transfer {
-  id                String      @id @default(cuid())
-  tripId            String
-  fromParticipantId String
-  toParticipantId   String
-  amount            Decimal     @db.Decimal(12, 2)
-  currency          String
-  description       String?
-  date              DateTime    @default(now())
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-
-  // Relations
-  trip              Trip        @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  fromParticipant   Participant @relation("TransferFrom", fields: [fromParticipantId], references: [id], onDelete: Restrict)
-  toParticipant     Participant @relation("TransferTo", fields: [toParticipantId], references: [id], onDelete: Restrict)
-
-  @@index([tripId])
-  @@index([fromParticipantId])
-  @@index([toParticipantId])
-  @@index([date])
-}
-
-// Auth.js / NextAuth tables
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@index([userId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
 }

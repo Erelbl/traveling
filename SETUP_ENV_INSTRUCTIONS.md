@@ -148,12 +148,21 @@ Next.js only reads env files on startup. You MUST restart after changes.
 
 Check the DATABASE_URL format:
 ```env
-# ✅ CORRECT:
-DATABASE_URL="postgresql://user:pass@host.neon.tech/dbname?sslmode=require"
+# ✅ CORRECT (with channel_binding for Neon):
+DATABASE_URL="postgresql://user:pass@host-pooler.neon.tech/dbname?sslmode=require&channel_binding=require"
 
 # ❌ WRONG:
 DATABASE_URL=postgresql://...  (missing quotes)
 DATABASE_URL="postgres://..."  (should be "postgresql://")
+DATABASE_URL="postgresql://...?sslmode=require"  (missing channel_binding for Neon)
+```
+
+**IMPORTANT for Neon users:**
+Your DATABASE_URL MUST include `channel_binding=require` at the end:
+```env
+DATABASE_URL="postgresql://...?sslmode=require&channel_binding=require"
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^
+                                                 This is REQUIRED!
 ```
 
 ## Example `.env.local` File
@@ -162,8 +171,9 @@ Here's what your complete `.env.local` should look like:
 
 ```env
 # Database (Neon PostgreSQL)
-DATABASE_URL="postgresql://neondb_owner:abc123@ep-host.aws.neon.tech/neondb?sslmode=require"
-DIRECT_URL="postgresql://neondb_owner:abc123@ep-host-direct.aws.neon.tech/neondb?sslmode=require"
+# IMPORTANT: Include channel_binding=require for Neon!
+DATABASE_URL="postgresql://neondb_owner:abc123@ep-host-pooler.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+DIRECT_URL="postgresql://neondb_owner:abc123@ep-host.aws.neon.tech/neondb?sslmode=require"
 
 # NextAuth
 AUTH_URL="http://localhost:3000"
