@@ -38,7 +38,7 @@ async function testEmail() {
     
     const result = await resend.emails.send({
       from: emailFrom,
-      to: 'doreliraz@gmail.com', // Your email for testing
+      to: 'blerelbl@gmail.com', // Your ACTUAL email from Resend account
       subject: 'בדיקת Resend - Travel Finance',
       html: `
         <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
