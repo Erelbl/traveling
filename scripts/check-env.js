@@ -3,6 +3,14 @@
  * Run: node scripts/check-env.js
  */
 
+// Load .env.local
+try {
+  require('dotenv').config({ path: '.env.local' });
+} catch (e) {
+  console.log('⚠️  dotenv not installed, install with: npm install dotenv');
+  console.log('   For now, relying on system environment\n');
+}
+
 const requiredVars = [
   'DATABASE_URL',
   'AUTH_SECRET',

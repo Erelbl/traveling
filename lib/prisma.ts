@@ -33,26 +33,34 @@ const globalForPrisma = globalThis as unknown as {
 
 // Create a stable connection pool
 const createOrGetPool = () => {
+  // Get DATABASE_URL fresh every time to ensure it's always available
+  const currentUrl = process.env.DATABASE_URL || DATABASE_URL;
+  
+  if (!currentUrl) {
+    throw new Error('DATABASE_URL is not available at runtime!');
+  }
+  
   // If we have a cached pool AND the connection string hasn't changed, reuse it
-  if (globalForPrisma.pool && globalForPrisma.connectionString === DATABASE_URL) {
+  if (globalForPrisma.pool && globalForPrisma.connectionString === currentUrl) {
     console.log('[Prisma] Reusing existing Neon Pool');
     return globalForPrisma.pool;
   }
 
   console.log('[Prisma] Creating new Neon Pool');
+  console.log('[Prisma] Connection string present:', !!currentUrl);
   
   // Configure Neon for Node.js environment
   neonConfig.fetchConnectionCache = true;
   
   // Create new pool with explicit connection string
   const pool = new Pool({ 
-    connectionString: DATABASE_URL,
+    connectionString: currentUrl,
   });
   
   // Cache it for reuse in development
   if (process.env.NODE_ENV !== 'production') {
     globalForPrisma.pool = pool;
-    globalForPrisma.connectionString = DATABASE_URL;
+    globalForPrisma.connectionString = currentUrl;
   }
   
   return pool;

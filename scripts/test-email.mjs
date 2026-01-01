@@ -55,7 +55,7 @@ async function testEmail() {
     console.log('✅ Email sent successfully!');
     console.log('Response:', result);
     console.log('\n=================================');
-    console.log('Check your inbox at doreliraz@gmail.com');
+    console.log('Check your inbox at blerelbl@gmail.com');
     console.log('=================================\n');
     
   } catch (error) {
