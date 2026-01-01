@@ -53,9 +53,38 @@ const { handlers, signIn, signOut, auth } = NextAuth({
             `,
           });
           
-          console.log('[Auth] Resend: Email sent successfully', result);
+          console.log('[Auth] Resend: Email sent successfully');
+          console.log('[Auth] Response:', JSON.stringify(result, null, 2));
+          
+          // Check if there's an error in the response (Resend returns errors in data.error)
+          if (result.error) {
+            console.error('[Auth] ❌ Resend API returned an error!');
+            console.error('[Auth] Error details:', result.error);
+            
+            if (result.error.statusCode === 401) {
+              throw new Error(
+                '🔑 Resend API Key is invalid!\n' +
+                'The AUTH_RESEND_KEY in .env.local is not working.\n' +
+                'Please:\n' +
+                '1. Go to https://resend.com/api-keys\n' +
+                '2. Create a new API Key\n' +
+                '3. Update AUTH_RESEND_KEY in .env.local\n' +
+                '4. Restart the server\n' +
+                'See FIX_RESEND_KEY.md for detailed instructions.'
+              );
+            }
+            
+            throw new Error(`Resend error: ${result.error.message || 'Unknown error'}`);
+          }
+          
+          if (!result.data || !result.data.id) {
+            console.warn('[Auth] ⚠️ Resend did not return an email ID');
+          }
         } catch (error) {
-          console.error('[Auth] Resend: Failed to send email', error);
+          console.error('[Auth] Resend: Failed to send email');
+          console.error('[Auth] Error type:', error.constructor.name);
+          console.error('[Auth] Error message:', error.message);
+          console.error('[Auth] Full error:', error);
           throw error;
         }
       },
