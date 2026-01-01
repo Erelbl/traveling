@@ -1,9 +1,26 @@
 'use client';
 
 import { useSession, signIn, signOut } from 'next-auth/react';
+import { useState, FormEvent } from 'react';
 
 export default function LoginPage() {
   const { data: session, status } = useSession();
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    
+    setIsSubmitting(true);
+    try {
+      await signIn('resend', { email, callbackUrl: '/' });
+    } catch (error) {
+      console.error('Sign in error:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -36,16 +53,35 @@ export default function LoginPage() {
         )}
 
         {status === 'unauthenticated' && (
-          <div className="text-center">
-            <p className="mb-6 text-gray-600">
+          <div>
+            <p className="mb-6 text-gray-600 text-center">
               היכנס עם המייל שלך כדי להתחיל לנהל את הוצאות הטיול
             </p>
-            <button
-              onClick={() => signIn('resend', { callbackUrl: '/' })}
-              className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:from-cyan-600 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl"
-            >
-              התחבר עם אימייל
-            </button>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  כתובת מייל
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  required
+                  disabled={isSubmitting}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  dir="ltr"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isSubmitting || !email}
+                className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:from-cyan-600 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'שולח...' : 'התחבר עם אימייל'}
+              </button>
+            </form>
           </div>
         )}
 
