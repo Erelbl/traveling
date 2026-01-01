@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Rubik } from "next/font/google";
 import "./globals.css";
+import { Providers } from "./providers";
 
 const rubik = Rubik({
   subsets: ["hebrew", "latin"],
@@ -21,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="he" dir="rtl">
       <body className={`${rubik.className} antialiased bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-50`}>
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
