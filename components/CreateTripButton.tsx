@@ -19,11 +19,12 @@ export default function CreateTripButton({ onTripCreated }: CreateTripButtonProp
     setSuccess(false);
 
     const formData = new FormData(e.currentTarget);
+    const endDate = formData.get('endDate') as string;
     const data = {
       name: formData.get('name') as string,
       baseCurrency: formData.get('baseCurrency') as string,
       startDate: formData.get('startDate') as string,
-      endDate: formData.get('endDate') as string,
+      endDate: endDate || undefined, // Make it optional
       travelStyle: formData.get('travelStyle') as string,
       description: formData.get('description') as string,
     };
