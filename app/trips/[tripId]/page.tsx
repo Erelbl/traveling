@@ -2,6 +2,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
+import TripExpenses from '@/components/TripExpenses';
 
 export const dynamic = 'force-dynamic';
 
@@ -215,6 +216,29 @@ export default async function TripDetailsPage({ params }: PageProps) {
 
         {/* Content Sections */}
         <div className="space-y-6">
+          {/* Expenses with Add Form */}
+          <TripExpenses 
+            trip={{
+              id: trip.id,
+              name: trip.name,
+              baseCurrency: trip.baseCurrency,
+            }}
+            initialExpenses={trip.expenses.map((expense) => ({
+              id: expense.id,
+              amount: Number(expense.amount),
+              currency: expense.currency,
+              category: expense.category,
+              description: expense.description,
+              notes: expense.notes,
+              date: expense.date,
+              paidBy: {
+                id: expense.paidBy.id,
+                name: expense.paidBy.name,
+                email: expense.paidBy.email,
+              },
+            }))}
+          />
+
           {/* Participants */}
           {trip.participants.length > 0 && (
             <div className="bg-white rounded-xl shadow-lg p-6">
@@ -244,61 +268,6 @@ export default async function TripDetailsPage({ params }: PageProps) {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Expenses */}
-          {trip.expenses.length > 0 ? (
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span>💰</span>
-                הוצאות
-              </h2>
-              <div className="space-y-3">
-                {trip.expenses.map((expense) => (
-                  <div
-                    key={expense.id}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold">
-                        {getCurrencySymbol(expense.currency)}
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-semibold text-gray-900">
-                          {expense.description}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          שילם: {expense.paidBy.name} • {formatDate(expense.date)}
-                        </div>
-                        {expense.notes && (
-                          <div className="text-sm text-gray-500 mt-1">
-                            {expense.notes}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-left">
-                      <div className="text-xl font-bold text-gray-900">
-                        {formatCurrency(Number(expense.amount), expense.currency)}
-                      </div>
-                      <div className="text-xs text-gray-500 capitalize">
-                        {expense.category}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-              <div className="text-6xl mb-4">💸</div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                אין הוצאות עדיין
-              </h3>
-              <p className="text-gray-500">
-                התחל לתעד הוצאות כדי לעקוב אחרי התקציב
-              </p>
             </div>
           )}
 
