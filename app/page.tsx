@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Trip, TRAVEL_STYLE_LABELS } from "@/types/trip";
 import CreateTripForm from "@/components/CreateTripForm";
 import TripDashboard from "@/components/TripDashboard";
@@ -341,7 +342,22 @@ export default function Home() {
   }
 
   if (!currentTrip) {
-    return <CreateTripForm onTripCreated={handleTripCreated} />;
+    return (
+      <>
+        <div className="fixed top-4 left-4 z-50">
+          <Link
+            href="/trips"
+            className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-lg hover:shadow-xl transition-all text-gray-700 font-medium"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+            הטיולים שלי
+          </Link>
+        </div>
+        <CreateTripForm onTripCreated={handleTripCreated} />
+      </>
+    );
   }
 
   return (
