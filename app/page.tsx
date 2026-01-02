@@ -6,7 +6,6 @@ import CreateTripForm from "@/components/CreateTripForm";
 import TripDashboard from "@/components/TripDashboard";
 import { getCurrencyMeta } from "@/types/expense";
 import { sanitizeTripData } from "@/lib/validation";
-import AuthWrapper from "@/components/AuthWrapper";
 
 type TabType = "home" | "add" | "reports" | "trip";
 
@@ -331,32 +330,28 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <AuthWrapper>
-        <div className="min-h-screen bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">טוען...</p>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">טוען...</p>
         </div>
-      </AuthWrapper>
+      </div>
     );
   }
 
+  if (!currentTrip) {
+    return <CreateTripForm onTripCreated={handleTripCreated} />;
+  }
+
   return (
-    <AuthWrapper>
-      {!currentTrip ? (
-        <CreateTripForm onTripCreated={handleTripCreated} />
-      ) : (
-        <div className="min-h-screen bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-50">
-          <div className="pb-20">
-            {activeTab === "home" && <HomeTab trip={currentTrip} onResetTrip={handleResetTrip} />}
-            {activeTab === "add" && <AddExpenseTab trip={currentTrip} />}
-            {activeTab === "reports" && <ReportsTab trip={currentTrip} />}
-            {activeTab === "trip" && <TripDetailsTab trip={currentTrip} onResetTrip={handleResetTrip} />}
-          </div>
-          <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-        </div>
-      )}
-    </AuthWrapper>
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-50">
+      <div className="pb-20">
+        {activeTab === "home" && <HomeTab trip={currentTrip} onResetTrip={handleResetTrip} />}
+        {activeTab === "add" && <AddExpenseTab trip={currentTrip} />}
+        {activeTab === "reports" && <ReportsTab trip={currentTrip} />}
+        {activeTab === "trip" && <TripDetailsTab trip={currentTrip} onResetTrip={handleResetTrip} />}
+      </div>
+      <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+    </div>
   );
 }
