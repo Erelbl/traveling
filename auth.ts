@@ -7,7 +7,6 @@ import { prisma } from "@/lib/prisma";
 console.log('[Auth] Environment check:');
 console.log('  AUTH_RESEND_KEY:', process.env.AUTH_RESEND_KEY ? '✓ Set' : '✗ Missing');
 console.log('  AUTH_EMAIL_FROM:', process.env.AUTH_EMAIL_FROM || 'Using default: Trip Finance <onboarding@resend.dev>');
-console.log('  DATABASE_URL:', process.env.DATABASE_URL ? '✓ Set' : '✗ Missing');
 
 const resendApiKey = process.env.AUTH_RESEND_KEY;
 const emailFrom = process.env.AUTH_EMAIL_FROM ?? "Trip Finance <onboarding@resend.dev>";
@@ -80,10 +79,10 @@ const { handlers, signIn, signOut, auth } = NextAuth({
           if (!result.data || !result.data.id) {
             console.warn('[Auth] ⚠️ Resend did not return an email ID');
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error('[Auth] Resend: Failed to send email');
-          console.error('[Auth] Error type:', error.constructor.name);
-          console.error('[Auth] Error message:', error.message);
+          console.error('[Auth] Error type:', error?.constructor?.name);
+          console.error('[Auth] Error message:', error?.message);
           console.error('[Auth] Full error:', error);
           throw error;
         }
@@ -95,9 +94,24 @@ const { handlers, signIn, signOut, auth } = NextAuth({
     verifyRequest: "/verify-request",
   },
   debug: true,
+  logger: {
+    error(code, ...message) {
+      console.error(`[NextAuth][error][${code}]`, ...message);
+    },
+    warn(code, ...message) {
+      console.warn(`[NextAuth][warn][${code}]`, ...message);
+    },
+    debug(code, ...message) {
+      console.log(`[NextAuth][debug][${code}]`, ...message);
+    },
+  },
   callbacks: {
     async signIn({ user, account, profile, email, credentials }) {
-      console.log('[NextAuth] signIn callback:', { user, account, email });
+      console.log('[NextAuth] signIn callback:', { 
+        user: user ? { id: user.id, email: user.email } : null,
+        account: account ? { provider: account.provider, type: account.type } : null,
+        email: email ? 'provided' : 'not provided'
+      });
       return true;
     },
   },
