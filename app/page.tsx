@@ -6,6 +6,7 @@ import CreateTripForm from "@/components/CreateTripForm";
 import TripDashboard from "@/components/TripDashboard";
 import { getCurrencyMeta } from "@/types/expense";
 import { sanitizeTripData } from "@/lib/validation";
+import CreateTripButton from "@/components/CreateTripButton";
 
 type TabType = "home" | "add" | "reports" | "trip";
 
@@ -352,6 +353,7 @@ export default function Home() {
         {activeTab === "trip" && <TripDetailsTab trip={currentTrip} onResetTrip={handleResetTrip} />}
       </div>
       <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      <CreateTripButton onTripCreated={() => console.log('Trip created!')} />
     </div>
   );
 }

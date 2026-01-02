@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Trip } from "@/types/trip";
 import { getCurrencyMeta } from "@/types/expense";
 
@@ -21,7 +22,7 @@ export default function TripDashboard({ trip, onResetTrip }: TripDashboardProps)
         </div>
         
         <div className="relative px-6 pt-8 pb-16">
-          <div className="flex justify-start mb-4">
+          <div className="flex justify-between items-center mb-4">
             <button
               onClick={onResetTrip}
               className="text-white/80 hover:text-white transition-colors text-sm flex items-center gap-2"
@@ -32,6 +33,15 @@ export default function TripDashboard({ trip, onResetTrip }: TripDashboardProps)
               </svg>
               הגדרות
             </button>
+            <Link
+              href="/my-trips"
+              className="text-white/80 hover:text-white transition-colors text-sm flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+              הטיולים שלי
+            </Link>
           </div>
 
           <div className="flex justify-center mb-4">
