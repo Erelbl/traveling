@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import TripExpenses from '@/components/TripExpenses';
+import TripSummary from '@/components/TripSummary';
 
 export const dynamic = 'force-dynamic';
 
@@ -106,6 +107,30 @@ export default async function TripDetailsPage({ params }: PageProps) {
     (sum, expense) => sum + Number(expense.amount),
     0
   );
+
+  // Calculate spend by category
+  const spendByCategory = trip.expenses.reduce((acc, expense) => {
+    const existing = acc.find((item) => item.category === expense.category);
+    if (existing) {
+      existing.total += Number(expense.amount);
+      existing.count += 1;
+    } else {
+      acc.push({
+        category: expense.category,
+        total: Number(expense.amount),
+        count: 1,
+      });
+    }
+    return acc;
+  }, [] as { category: string; total: number; count: number }[]);
+
+  // Calculate last 7 days total
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  
+  const last7DaysTotal = trip.expenses
+    .filter((expense) => new Date(expense.date) >= sevenDaysAgo)
+    .reduce((sum, expense) => sum + Number(expense.amount), 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-50">
@@ -214,8 +239,16 @@ export default async function TripDetailsPage({ params }: PageProps) {
           </div>
         </div>
 
+        {/* Summary Widget */}
+        <TripSummary
+          baseCurrency={trip.baseCurrency}
+          totalSpend={totalExpenses}
+          spendByCategory={spendByCategory}
+          last7DaysTotal={last7DaysTotal}
+        />
+
         {/* Content Sections */}
-        <div className="space-y-6">
+        <div className="space-y-6 mt-6">
           {/* Expenses with Add Form */}
           <TripExpenses 
             trip={{
